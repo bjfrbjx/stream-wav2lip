@@ -11,8 +11,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import utils
-from ..models import SyncNet_color_384 as SyncNet
-from ..models import Wav2Lip_SAM as Wav2Lip, NLayerDiscriminator
+from primepake_wav2lip.models import SyncNet_color_384 as SyncNet
+from primepake_wav2lip.models import Wav2Lip_288SAM as Wav2Lip, NLayerDiscriminator
 from trains import Wav2lip_Dataset, load_checkpoint
 
 parser = argparse.ArgumentParser(description='Code to train the Wav2Lip model WITH the visual quality discriminator')

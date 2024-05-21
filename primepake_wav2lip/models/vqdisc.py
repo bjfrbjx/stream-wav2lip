@@ -2,6 +2,10 @@ import functools
 
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
+from torch.nn.functional import binary_cross_entropy
+
+from .conv import nonorm_Conv2d
 
 
 def count_params(model):
@@ -226,3 +230,212 @@ class NLayerDiscriminator_LIP(nn.Module):
         input = self.to_2d(input)
         input = self.get_lower_half(input)
         return self.main(input)
+
+
+class Wav2Lip_disc_qual_96(nn.Module):
+    def __init__(self):
+        super(Wav2Lip_disc_qual_96, self).__init__()
+
+        self.face_encoder_blocks = nn.ModuleList([
+            nn.Sequential(nonorm_Conv2d(3, 32, kernel_size=7, stride=1, padding=3)),  # 48,96
+
+            nn.Sequential(nonorm_Conv2d(32, 64, kernel_size=5, stride=(1, 2), padding=2),  # 48,48
+                          nonorm_Conv2d(64, 64, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(64, 128, kernel_size=5, stride=2, padding=2),  # 24,24
+                          nonorm_Conv2d(128, 128, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(128, 256, kernel_size=5, stride=2, padding=2),  # 12,12
+                          nonorm_Conv2d(256, 256, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(256, 512, kernel_size=3, stride=2, padding=1),  # 6,6
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1)),
+
+            nn.Sequential(nonorm_Conv2d(512, 512, kernel_size=3, stride=2, padding=1),  # 3,3
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1), ),
+
+            nn.Sequential(nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=0),  # 1, 1
+                          nonorm_Conv2d(512, 512, kernel_size=1, stride=1, padding=0)), ])
+
+        self.binary_pred = nn.Sequential(nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0), nn.Sigmoid())
+        self.label_noise = .0
+
+    def get_lower_half(self, face_sequences):
+        return face_sequences[:, :, face_sequences.size(2) // 2:]
+
+    def to_2d(self, face_sequences):
+        B = face_sequences.size(0)
+        face_sequences = torch.cat([face_sequences[:, :, i] for i in range(face_sequences.size(2))], dim=0)
+        return face_sequences
+
+    def perceptual_forward(self, false_face_sequences):
+        false_face_sequences = self.to_2d(false_face_sequences)
+        false_face_sequences = self.get_lower_half(false_face_sequences)
+
+        false_feats = false_face_sequences
+        for f in self.face_encoder_blocks:
+            false_feats = f(false_feats)
+
+        false_pred_loss = binary_cross_entropy(self.binary_pred(false_feats).view(len(false_feats), -1),
+                                               torch.ones((len(false_feats), 1)).cuda())
+
+        return false_pred_loss
+
+    def forward(self, face_sequences):
+        face_sequences = self.to_2d(face_sequences)
+        face_sequences = self.get_lower_half(face_sequences)
+
+        x = face_sequences
+        for f in self.face_encoder_blocks:
+            x = f(x)
+
+        return self.binary_pred(x).view(len(x), -1)
+
+
+class Wav2Lip_disc_qual_288(nn.Module):
+    def __init__(self):
+        super(Wav2Lip_disc_qual_288, self).__init__()
+
+        self.face_encoder_blocks = nn.ModuleList([
+            nn.Sequential(nonorm_Conv2d(3, 32, kernel_size=7, stride=1, padding=3)),  # 144,288
+
+            nn.Sequential(nonorm_Conv2d(32, 64, kernel_size=5, stride=(1, 2), padding=2),  # 144, 144
+                          nonorm_Conv2d(64, 64, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(64, 128, kernel_size=5, stride=2, padding=2),  # 72,72
+                          nonorm_Conv2d(128, 128, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(128, 128, kernel_size=5, stride=2, padding=2),  # 36,36
+                          nonorm_Conv2d(128, 128, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(128, 256, kernel_size=5, stride=2, padding=2),  # 18,18
+                          nonorm_Conv2d(256, 256, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(256, 256, kernel_size=5, stride=2, padding=2),  # 9,9
+                          nonorm_Conv2d(256, 256, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(256, 512, kernel_size=3, stride=2, padding=1),  # 5,5
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1)),
+
+            nn.Sequential(nonorm_Conv2d(512, 512, kernel_size=3, stride=2, padding=1),  # 3,3
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1), ),
+
+            nn.Sequential(nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=0),  # 1, 1
+                          nonorm_Conv2d(512, 512, kernel_size=1, stride=1, padding=0)), ])
+
+        self.binary_pred = nn.Sequential(nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0), nn.Sigmoid())
+        self.label_noise = .0
+
+    def get_lower_half(self, face_sequences):
+        return face_sequences[:, :, face_sequences.size(2) // 2:]
+
+    def to_2d(self, face_sequences):
+        B = face_sequences.size(0)
+        face_sequences = torch.cat([face_sequences[:, :, i] for i in range(face_sequences.size(2))], dim=0)
+        return face_sequences
+
+    def perceptual_forward(self, false_face_sequences):
+        false_face_sequences = self.to_2d(false_face_sequences)
+        false_face_sequences = self.get_lower_half(false_face_sequences)
+
+        false_feats = false_face_sequences
+        for f in self.face_encoder_blocks:
+            false_feats = f(false_feats)
+
+        false_pred_loss = F.binary_cross_entropy(self.binary_pred(false_feats).view(len(false_feats), -1),
+                                                 torch.ones((len(false_feats), 1)).cuda())
+
+        return false_pred_loss
+
+    def forward(self, face_sequences):
+        face_sequences = self.to_2d(face_sequences)
+        face_sequences = self.get_lower_half(face_sequences)
+
+        x = face_sequences
+
+        for f in self.face_encoder_blocks:
+            x = f(x)
+
+        return self.binary_pred(x).view(len(x), -1)
+
+
+class Wav2Lip_disc_qual_512(nn.Module):
+    def __init__(self):
+        super(Wav2Lip_disc_qual_512, self).__init__()
+        self.face_encoder_blocks = nn.ModuleList([
+            nn.Sequential(nonorm_Conv2d(3, 8, kernel_size=7, stride=1, padding=3)),  # 512, 512
+
+            nn.Sequential(nonorm_Conv2d(8, 16, kernel_size=5, stride=2, padding=2),  # 256, 256
+                          nonorm_Conv2d(16, 16, kernel_size=5, stride=1, padding=2),
+                          nonorm_Conv2d(16, 16, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(16, 32, kernel_size=5, stride=2, padding=2),  # 128, 128
+                          nonorm_Conv2d(32, 32, kernel_size=5, stride=1, padding=2),
+                          nonorm_Conv2d(32, 32, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(32, 64, kernel_size=5, stride=2, padding=2),  # 64, 64
+                          nonorm_Conv2d(64, 64, kernel_size=5, stride=1, padding=2),
+                          nonorm_Conv2d(64, 64, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(64, 128, kernel_size=5, stride=2, padding=2),  # 32, 32
+                          nonorm_Conv2d(128, 128, kernel_size=5, stride=1, padding=2),
+                          nonorm_Conv2d(128, 128, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(128, 256, kernel_size=5, stride=2, padding=2),  # 16, 16
+                          nonorm_Conv2d(256, 256, kernel_size=5, stride=1, padding=2),
+                          nonorm_Conv2d(256, 256, kernel_size=5, stride=1, padding=2)),
+
+            nn.Sequential(nonorm_Conv2d(256, 512, kernel_size=3, stride=2, padding=1),  # 8, 8
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1)),
+
+            nn.Sequential(nonorm_Conv2d(512, 512, kernel_size=3, stride=2, padding=1),  # 4, 4
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+                          nonorm_Conv2d(512, 512, kernel_size=3, stride=1, padding=1), ),
+
+            # Modified Blocks
+            nn.Sequential(nonorm_Conv2d(512, 1024, kernel_size=3, stride=2, padding=1),  # 2, 2
+                          nonorm_Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1), ),
+
+            nn.Sequential(nonorm_Conv2d(1024, 1024, kernel_size=2, stride=1, padding=0, norm=False),  # 1, 1
+                          nonorm_Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0, norm=False)), ])
+
+        self.binary_pred = nn.Sequential(nn.Conv2d(1024, 1, kernel_size=1, stride=1, padding=0),
+                                         nn.Sigmoid())
+        self.label_noise = .0
+        self.bce_loss = nn.BCELoss()
+
+    def get_lower_half(self, face_sequences):
+        return face_sequences[:, :, face_sequences.size(2) // 2:]
+
+    def to_2d(self, face_sequences):
+        B = face_sequences.size(0)
+        face_sequences = torch.cat([face_sequences[:, :, i] for i in range(face_sequences.size(2))], dim=0)
+        return face_sequences
+
+    def perceptual_forward(self, false_face_sequences):
+        false_face_sequences = self.to_2d(false_face_sequences)
+        false_face_sequences = self.get_lower_half(false_face_sequences)
+
+        false_feats = false_face_sequences
+        for f in self.face_encoder_blocks:
+            false_feats = f(false_feats)
+
+        # TODO: change back to cuda
+        # false_pred_loss = F.binary_cross_entropy_with_logits(torch.clamp(self.binary_pred(false_feats).view(len(false_feats), -1), min=-10, max=10), torch.ones((len(false_feats), 1)).cuda())
+        pred = self.binary_pred(false_feats).view(len(false_feats), -1)
+        target = torch.ones((len(false_feats), 1)).cuda()
+        false_pred_loss = F.binary_cross_entropy(pred, target)
+        # false_pred_loss = torch.mean(torch.square(pred - target))
+        # false_pred_loss = F.binary_cross_entropy(self.binary_pred(false_feats).view(len(false_feats), -1),
+        # torch.ones((len(false_feats), 1)).cpu())
+
+        return false_pred_loss
+
+    def forward(self, face_sequences):
+        face_sequences = self.to_2d(face_sequences)
+        x = face_sequences
+        for f in self.face_encoder_blocks:
+            x = f(x)
+
+        return self.binary_pred(x).view(len(x), -1)

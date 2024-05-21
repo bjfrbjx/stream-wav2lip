@@ -31,9 +31,9 @@ class SAM(nn.Module):
         return out
 
 
-class Wav2Lip_SAM(nn.Module):
+class Wav2Lip_288SAM(nn.Module):
     def __init__(self, audio_encoder=None):
-        super(Wav2Lip_SAM, self).__init__()
+        super(Wav2Lip_288SAM, self).__init__()
         self.sam = SAM()
         self.face_encoder_blocks = nn.ModuleList([
             nn.Sequential(Conv2d(6, 16, kernel_size=7, stride=1, padding=3),
@@ -202,9 +202,9 @@ class Wav2Lip_SAM(nn.Module):
         return outputs
 
 
-class Wav2Lip_384(nn.Module):
+class Wav2Lip_384SAM(nn.Module):
     def __init__(self, audio_encoder=None, is_sam=True):
-        super(Wav2Lip_384, self).__init__()
+        super(Wav2Lip_384SAM, self).__init__()
         self.is_sam = is_sam
         self.sam = SAM()
         self.face_encoder_blocks = nn.ModuleList([
@@ -278,9 +278,9 @@ class Wav2Lip_384(nn.Module):
 
             for p in self.audio_encoder.parameters():
                 p.requires_grad = False
-            self.audio_refine = nn.Sequential(
-                Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0),
-                Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0))
+        self.audio_refine = nn.Sequential(
+            Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0),
+            Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0))
 
         self.face_decoder_blocks = nn.ModuleList([
             nn.Sequential(Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0), ),  # + 1024

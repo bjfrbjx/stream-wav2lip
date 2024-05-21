@@ -5,9 +5,9 @@ import torch
 from torch import optim
 from torch.utils import data as data_utils
 
-from ..models.syncnet import SyncNet_color_384 as SyncNet
-from ..models.sam import Wav2Lip_384
-from ..models.vqdisc import NLayerDiscriminator
+from primepake_wav2lip.models.syncnet import SyncNet_color_384 as SyncNet
+from primepake_wav2lip.models.sam import Wav2Lip_384SAM
+from primepake_wav2lip.models.vqdisc import NLayerDiscriminator
 from trains import Wav2lip_Dataset, gan_train, load_checkpoint
 
 LAMBDA = 10  # gradient penalty
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         num_workers=1)
 
     # Model
-    model = Wav2Lip_384(is_sam=False).to(args.device)
+    model = Wav2Lip_384SAM(is_sam=False).to(args.device)
     disc = NLayerDiscriminator().to(args.device)
 
     print('total trainable params {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))

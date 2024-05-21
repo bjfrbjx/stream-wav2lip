@@ -5,8 +5,9 @@ import torch
 from torch import optim
 from torch.utils import data as data_utils
 
-from ..models.syncnetv2 import SyncNet_color as SyncNet
-from ..models.wav2lipv2 import Wav2Lip, Wav2Lip_disc_qual
+from primepake_wav2lip.models import Wav2Lip_disc_qual_288
+from primepake_wav2lip.models.syncnet import SyncNet_color_288 as SyncNet
+from primepake_wav2lip.models.wav2lip import Wav2Lip_288
 from trains import Wav2lip_Dataset, gan_train, load_checkpoint
 
 LAMBDA = 10  # gradient penalty
@@ -55,8 +56,8 @@ if __name__ == "__main__":
         num_workers=1)
 
     # Model
-    model = Wav2Lip().to(args.device)
-    disc = Wav2Lip_disc_qual().to(args.device)
+    model = Wav2Lip_288().to(args.device)
+    disc = Wav2Lip_disc_qual_288().to(args.device)
 
     print('total trainable params {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
     print('total DISC trainable params {}'.format(sum(p.numel() for p in disc.parameters() if p.requires_grad)))

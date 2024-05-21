@@ -34,11 +34,15 @@ def mask_mel(crop_mel):
 
 
 class Sync_Dataset(Dataset):
+
     def __init__(self, work_txt, img_size):
         self.target_imgsize = img_size
         self.work_txt = work_txt
         with open(self.work_txt, "r") as f:
             self.all_videos = [i.strip() for i in f.readlines()]
+
+    def get(self):
+        return self.__getitem__(0)
 
     def get_frame_id(self, frame):
         return int(basename(frame).split('.')[0])
@@ -414,7 +418,8 @@ def wav2lip_train(device, model, train_data_loader, test_data_loader, optimizer,
                     utils.save_sample_images(x, g, gt, step, checkpoint_dir)
                     save_ckp(step, epoch)
                     if averaged_sync_loss < .75:
-                        syncnet_wt = 0.01
+                        syncnet_wt = 0.03
+
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         save_ckp(step, epoch)

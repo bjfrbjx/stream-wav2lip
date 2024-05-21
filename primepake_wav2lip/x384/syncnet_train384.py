@@ -5,7 +5,7 @@ import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from ..models.syncnet import SyncNet_color_384 as SyncNet
+from primepake_wav2lip.models.syncnet import SyncNet_color_384 as SyncNet
 from trains import Sync_Dataset, load_checkpoint, syncnet_train
 
 parser = argparse.ArgumentParser(description='Code to train the expert lip-sync discriminator')

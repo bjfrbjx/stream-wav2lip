@@ -5,8 +5,8 @@ import torch
 from torch import optim
 from torch.utils import data as data_utils
 
-from ..models import SyncNet_color as SyncNet
-from ..models import Wav2Lip as Wav2Lip
+from primepake_wav2lip.models import SyncNet_color_288 as SyncNet
+from primepake_wav2lip.models import Wav2Lip_288
 from trains import Wav2lip_Dataset, load_checkpoint, wav2lip_train
 
 parser = argparse.ArgumentParser(description='Code to train the Wav2Lip model without the visual quality discriminator')
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         num_workers=1)
 
     # Model
-    model = Wav2Lip().to(args.device)
+    model = Wav2Lip_288().to(args.device)
     print('total trainable params {}'.format(sum(p.numel() for p in model.parameters() if p.requires_grad)))
 
     optimizer = optim.Adam([p for p in model.parameters() if p.requires_grad],
