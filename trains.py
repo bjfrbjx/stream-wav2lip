@@ -1,4 +1,5 @@
 import math
+import os.path
 import random
 from glob import glob
 from os.path import basename, dirname, join, isfile
@@ -51,7 +52,7 @@ class Sync_Dataset(Dataset):
             if img is None:
                 return None
             try:
-                img = cv2.resize(img, (self.target_imgsize, self.target_imgsize))
+                img = cv2.resize(img, self.target_imgsize)
                 if random_flip:
                     img = cv2.flip(img, 1)
             except Exception as e:
@@ -66,7 +67,9 @@ class Sync_Dataset(Dataset):
         vidname = dirname(start_frame)
         window_fnames = []
         for frame_id in range(start_id, start_id + syncnet_T):
-            frame = join(vidname, f'{frame_id:05d}.jpg')
+            frame1 = join(vidname, f'{frame_id:05d}.jpg')
+            frame2 = join(vidname, f'{frame_id}.jpg')
+            frame = frame1 if os.path.exists(frame1) else frame2
             if not isfile(frame):
                 return None
             window_fnames.append(frame)
@@ -141,7 +144,8 @@ class Sync_Dataset(Dataset):
             # H x W x 3 * T
             x = np.concatenate(window, axis=2) / 255.
             x = x.transpose(2, 0, 1)
-            x = x[:, x.shape[1] // 2:]
+            if self.target_imgsize[0]==self.target_imgsize[1]:
+                x = x[:, x.shape[1] // 2:]
 
             x = torch.FloatTensor(x)
             mel = torch.FloatTensor(mel.T).unsqueeze(0)
@@ -162,7 +166,7 @@ class Wav2lip_Dataset(Sync_Dataset):
                 img = cv2.imread(fname)
                 if random_flip:
                     img = cv2.flip(img, 1)
-                img = cv2.resize(img, (self.target_imgsize, self.target_imgsize))
+                img = cv2.resize(img,  self.target_imgsize)
             except Exception as e:
                 return None
             window.append(img)
