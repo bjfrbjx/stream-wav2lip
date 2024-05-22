@@ -64,16 +64,16 @@ class DataPool:
 
     def next_data(self, enhance):
         idx = next(self.cycle)
-        bg = cv2.imread(f"{self.data_dir}/bg/{idx:05}.jpg")
+        bg = cv2.imread(f"{self.data_dir}/bg/{idx:05d}.jpg")
         if not enhance:
-            body_face = cv2.imread(f"{self.data_dir}/body_faces/{idx:05}.jpg")
+            body_face = cv2.imread(f"{self.data_dir}/body_faces/{idx:05d}.jpg")
             data = {"bg": bg,
                     "body_face": body_face,
                     "body_coord": self.body_coords[idx]
                     }
         else:
-            head = cv2.imread(f"{self.data_dir}/heads/{idx:05}.jpg")
-            head_face = cv2.imread(f"{self.data_dir}/head_faces/{idx:05}.jpg")
+            head = cv2.imread(f"{self.data_dir}/heads/{idx:05d}.jpg")
+            head_face = cv2.imread(f"{self.data_dir}/head_faces/{idx:05d}.jpg")
             data = {"bg": bg,
                     "head": head,
                     "head_face": head_face,

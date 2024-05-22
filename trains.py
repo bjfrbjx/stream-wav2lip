@@ -35,6 +35,20 @@ def mask_mel(crop_mel):
 
 class Sync_Dataset(Dataset):
 
+    def id2frameFile(self,frame_id):
+        frame1 = join(self.vidname, f'{frame_id:05d}.jpg')
+        frame2 = join(self.vidname, f'{frame_id}.jpg')
+        return frame1 if os.path.exists(frame1) else frame2
+
+    def get_wrong_window(self, postive_img_name):
+        postive_img_id=self.get_frame_id(postive_img_name)
+        tl=list(range(len(self.img_names)))
+        tl=tl[:postive_img_id]+tl[tl+syncnet_T:]
+        tl=random.choices(tl,k=syncnet_T)
+        if random.random() > 0.6:
+            tl = [random.choice(tl)]*syncnet_T
+        return tl
+
     def __init__(self, work_txt, img_size):
         self.target_imgsize = img_size
         self.work_txt = work_txt
@@ -71,11 +85,7 @@ class Sync_Dataset(Dataset):
         vidname = dirname(start_frame)
         window_fnames = []
         for frame_id in range(start_id, start_id + syncnet_T):
-            frame1 = join(vidname, f'{frame_id:05d}.jpg')
-            frame2 = join(vidname, f'{frame_id}.jpg')
-            frame = frame1 if os.path.exists(frame1) else frame2
-            if not isfile(frame):
-                return None
+            frame=self.id2frameFile(frame_id)
             window_fnames.append(frame)
         return window_fnames
 
@@ -110,32 +120,26 @@ class Sync_Dataset(Dataset):
     def __getitem__(self, idx):
         while True:
             idx = random.randint(0, len(self.all_videos) - 1)
-            vidname = self.all_videos[idx]
-            img_names = list(i.replace("\\", "/") for i in glob(join(vidname, '*.jpg')))
-            if len(img_names) <= 3 * syncnet_T:
-                continue
-            postive_img_name = random.choice(img_names)
-            wrong_img_name = random.choice(img_names)
-            while wrong_img_name == postive_img_name:
-                wrong_img_name = random.choice(img_names)
+            random_flip=random.random()>0.5
+            self.vidname = self.all_videos[idx]
+            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T]
+            postive_img_name = random.choice(self.img_names)
 
             if random.choice([True, False]):
                 y = torch.ones(1).float()
-                chosen = postive_img_name
+                window_fnames = self.get_window(postive_img_name)
             else:
                 y = torch.zeros(1).float()
-                chosen = wrong_img_name
+                window_fnames=self.get_wrong_window(postive_img_name)
 
-            window_fnames = self.get_window(chosen)
             if window_fnames is None:
                 continue
-            random_flip=random.random()>0.5
             window = self.read_window(window_fnames, random_flip=random_flip)
 
             if len(window_fnames) != len(window):
                 continue
 
-            orig_mel=self.audio2mel(vidname)
+            orig_mel=self.audio2mel(self.vidname)
             mel = self.crop_audio_window(orig_mel.copy(), postive_img_name)
 
             if (mel.shape[0] != syncnet_mel_step_size):
@@ -158,24 +162,6 @@ class Sync_Dataset(Dataset):
 
 class Wav2lip_Dataset(Sync_Dataset):
 
-    def read_wrong_window(self, window_fnames, random_flip=False):
-        if window_fnames is None:
-            return None
-        random.shuffle(window_fnames)
-        if random.random() > 0.4:
-            window_fnames = [random.choice(window_fnames)]*len(window_fnames)
-        window = []
-        for fname in window_fnames:
-            try:
-                img = cv2.imread(fname)
-                if random_flip:
-                    img = cv2.flip(img, 1)
-                img = cv2.resize(img,  self.target_imgsize)
-            except Exception as e:
-                return None
-            window.append(img)
-
-        return window
 
     def get_segmented_mels(self, spec, start_frame):
         mels = []
@@ -200,25 +186,21 @@ class Wav2lip_Dataset(Sync_Dataset):
     def __getitem__(self, idx):
         while True:
             idx = random.randint(0, len(self.all_videos) - 1)
-            vidname = self.all_videos[idx]
-            img_names = list(glob(join(vidname, '*.jpg')))
-            if len(img_names) <= 3 * syncnet_T:
-                continue
+            random_flip=random.random()>0.5
+            self.vidname = self.all_videos[idx]
+            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T]
 
-            postive_img_name = random.choice(img_names)
-            wrong_img_name = random.choice(img_names)
-            while wrong_img_name == postive_img_name:
-                wrong_img_name = random.choice(img_names)
+            postive_img_name = random.choice(self.img_names)
 
             window_fnames = self.get_window(postive_img_name)
-            wrong_window_fnames = self.get_window(wrong_img_name)
+            wrong_window_fnames = self.get_wrong_window(postive_img_name)
             if window_fnames is None or wrong_window_fnames is None:
                 continue
 
-            window = self.read_window(window_fnames)
-            wrong_window = self.read_window(wrong_window_fnames)
+            window = self.read_window(window_fnames,random_flip=random_flip)
+            wrong_window = self.read_window(wrong_window_fnames,random_flip=random_flip)
 
-            orig_mel=self.audio2mel(vidname)
+            orig_mel=self.audio2mel(self.vidname)
             mel = self.crop_audio_window(orig_mel.copy(), postive_img_name)
 
             if (mel.shape[0] != syncnet_mel_step_size):
