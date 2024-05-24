@@ -14,7 +14,6 @@ parser.add_argument("--data_root", help="Root folder of the preprocessed LRS2 da
 parser.add_argument('--device', default="cpu")
 parser.add_argument('--checkpoint_dir', help='Save checkpoints to this directory', required=True, type=str)
 parser.add_argument('--pre_path', help='Resumed from this checkpoint', default=None, type=str)
-parser.add_argument('--bottom_half', help='给图片只有下半脸', default=False, type=bool)
 args = parser.parse_args()
 from hparams import *
 img_size = 384
@@ -32,9 +31,9 @@ if __name__ == "__main__":
         os.mkdir(checkpoint_dir)
 
     # Dataset and Dataloader setup
-    target_wh=(img_size,img_size//2) if args.bottom_half else (img_size,img_size)
-    train_dataset = Sync_Dataset(f"{args.data_root}/train.txt",target_wh)
-    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",target_wh)
+    # todo 自定义数据做测试集，lrw-1000 只有下半脸，做训练集
+    train_dataset = Sync_Dataset(f"{args.data_root}/train.txt",(img_size,img_size))
+    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",(img_size,img_size//2))
 
     train_data_loader = DataLoader(train_dataset, batch_size=syncnet_batch_size, shuffle=True,num_workers=1)
 

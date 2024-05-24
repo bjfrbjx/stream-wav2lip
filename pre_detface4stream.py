@@ -1,45 +1,25 @@
-import argparse
 import os
 import shutil
 import subprocess
-import uuid
 
 import cv2
 import numpy as np
 import torch
+from PIL import Image
 from face_alignment import LandmarksType
 from facexlib.utils.face_restoration_helper import get_center_face
 
 from utils import BATCH_GFP, FaceAlignment, time_print, osp
 
-parser = argparse.ArgumentParser(description='Inference code to lip-sync videos in the wild using Wav2Lip models')
-
-parser.add_argument('--face', type=str,
-                    help='Filepath of video/image that contains faces to use', required=True)
-
-parser.add_argument('--out_dir', type=str,
-                    help='Filepath of npz that contains preprocessed data to save', required=True)
-
-parser.add_argument('--nosmooth', default=False, action='store_true',
-                    help='Prevent smoothing face detections over a short window')
-
-parser.add_argument('--train_dir', default="data_dir", action='store_true',
-                    help='Prevent smoothing face detections over a short window')
-
-parser.add_argument('--face_size', default=96, help='截取到脸的统一缩放尺寸', type=int)
-
-parser.add_argument('--device', default="cpu")
-
-args = parser.parse_args()
 cuda_memery = 6 * 1024 * 1024 * 1024
+device="cuda"
 if not torch.cuda.is_available():
-    args.device = "cpu"
+    device = "cpu"
 
 ###################### HPARAMS #########################
-FACE_SIZE = args.face_size
 PADS = [0, 15, 0, 0]
-DEVICE = args.device
-gfp_worker = BATCH_GFP(DEVICE)
+DEVICE = device
+gfp_worker = BATCH_GFP(device)
 
 detector = FaceAlignment(LandmarksType.TWO_D, flip_input=False, device=DEVICE,face_detector="blazeface")
 
@@ -54,7 +34,7 @@ def get_smoothened_boxes(boxes, T):
     return boxes
 
 
-def face_detect(images):
+def face_detect(images,nosmooth=False):
     batch_size = 16
 
     while True:
@@ -89,7 +69,7 @@ def face_detect(images):
         results.append([x1, y1, x2, y2])
 
     boxes = np.array(results)
-    if not args.nosmooth:
+    if not nosmooth:
         boxes = get_smoothened_boxes(boxes, T=5)
     results = [[image[y1: y2, x1:x2], (y1, y2, x1, x2)] for image, (x1, y1, x2, y2) in zip(images, boxes)]
     return results
@@ -128,13 +108,13 @@ def crop_head_with_affine(u8bgr_frames: np.ndarray):
     return u8bgr_crops, f32_invAffMats
 
 @time_print
-def pre_face_process(u8bgrframes: np.ndarray):
+def pre_face_process(u8bgrframes: np.ndarray,nosmooth=False,face_size=96):
     img_batch, coords = [], []
-    face_det_results = face_detect(u8bgrframes)
+    face_det_results = face_detect(u8bgrframes,nosmooth=nosmooth)
 
     for i in range(len(u8bgrframes)):
         face, coord = face_det_results[i]
-        img_batch.append(cv2.resize(face, (FACE_SIZE, FACE_SIZE)))
+        img_batch.append(cv2.resize(face, (face_size, face_size)))
         coords.append(coord)
     u8bgr_faces = np.asarray(img_batch, dtype=np.uint8)
 
@@ -150,30 +130,33 @@ body_coords = []
 f32_invAffMats_batchs = []
 
 
-def working(working_idx, working_frames):
+def working(working_idx, working_frames,out_dir=".",nosmooth=False,face_size=96):
     frames = np.concatenate([np.expand_dims(u, axis=0) for u in working_frames], axis=0, dtype=np.uint8)
     print(f"\n crop_head_with_affine: {frames.shape}")
     # 躯体中取出头和复位数据
     croped_heads, f32_invAffMats = crop_head_with_affine(frames)
     for i, croped_head in enumerate(croped_heads):
-        cv2.imwrite(f"{args.out_dir}/heads/{working_idx[i]:05d}.jpg", croped_head)
+        #cv2.imwrite(f"{out_dir}/heads/{working_idx[i]:05d}.jpg", croped_head)
+        Image.fromarray(croped_head[..., ::-1], "RGB").save(f"{out_dir}/heads/{working_idx[i]:05d}.jpg")
     f32_invAffMats_batchs.append(f32_invAffMats)
 
     # 躯体中取出脸和复位数据
-    body_faces, body_coord = pre_face_process(frames)
+    body_faces, body_coord = pre_face_process(frames,nosmooth,face_size)
     for i, body_face in enumerate(body_faces):
-        cv2.imwrite(f"{args.out_dir}/body_faces/{working_idx[i]:05d}.jpg", body_face)
+        #cv2.imwrite(f"{out_dir}/body_faces/{working_idx[i]:05d}.jpg", body_face)
+        Image.fromarray(body_face[..., ::-1], "RGB").save(f"{out_dir}/body_faces/{working_idx[i]:05d}.jpg")
     body_coords.append(body_coord)
 
     # 头中取出脸和复位数据
-    head_faces, head_coord = pre_face_process(croped_heads)
+    head_faces, head_coord = pre_face_process(croped_heads,nosmooth,face_size)
     for i, head_face in enumerate(head_faces):
-        cv2.imwrite(f"{args.out_dir}/head_faces/{working_idx[i]:05d}.jpg", head_face)
+        #cv2.imwrite(f"{out_dir}/head_faces/{working_idx[i]:05d}.jpg", head_face)
+        Image.fromarray(head_face[...,::-1],"RGB").save(f"{out_dir}/head_faces/{working_idx[i]:05d}.jpg")
     head_coords.append(head_coord)
 
 template = 'ffmpeg -loglevel panic -y -i {} -strict -2 {}'
 
-def main():
+def main(face,nosmooth,out_dir,face_size):
     """
     输入源视频face，
     指定输出目录out_dir
@@ -187,69 +170,78 @@ def main():
     coords：脸在head的相对位置
 
     """
-    if not osp.isfile(args.face):
+    if not osp.isfile(face):
         raise ValueError('--face argument must be a valid path')
 
-    if args.face.split('.')[-1].lower() not in ['mp4', 'avi', 'mov']:
+    if face.split('.')[-1].lower() not in ['mp4', 'avi', 'mov','mpg']:
         raise ValueError('--face argument must be a video file')
 
-    video_stream = cv2.VideoCapture(args.face)
-    args.fps = video_stream.get(cv2.CAP_PROP_FPS)
+    video_stream = cv2.VideoCapture(face)
+    fps = video_stream.get(cv2.CAP_PROP_FPS)
     global frame_batch
     if frame_batch is None:
         frame_batch=int(video_stream.get(cv2.CAP_PROP_FPS))
     print('Reading video frames...')
     idx = 0
-    if not osp.exists(f"{args.out_dir}/bg"):
-        os.mkdir(f"{args.out_dir}/bg")
-    if not osp.exists(f"{args.out_dir}/head_faces"):
-        os.mkdir(f"{args.out_dir}/head_faces")
-    if not osp.exists(f"{args.out_dir}/body_faces"):
-        os.mkdir(f"{args.out_dir}/body_faces")
-    if not osp.exists(f"{args.out_dir}/heads"):
-        os.mkdir(f"{args.out_dir}/heads")
+    if not osp.exists(out_dir):
+        os.mkdir(out_dir)
+    if not osp.exists(f"{out_dir}/bg"):
+        os.mkdir(f"{out_dir}/bg")
+    if not osp.exists(f"{out_dir}/head_faces"):
+        os.mkdir(f"{out_dir}/head_faces")
+    if not osp.exists(f"{out_dir}/body_faces"):
+        os.mkdir(f"{out_dir}/body_faces")
+    if not osp.exists(f"{out_dir}/heads"):
+        os.mkdir(f"{out_dir}/heads")
     working_frames = []
     working_idx = []
-    wavpath=f"{args.out_dir}/audio.wav"
-    command = template.format(args.face, wavpath)
+    wavpath=f"{out_dir}/audio.wav"
+    command = template.format(face, wavpath)
     subprocess.call(command, shell=True)
     while True:
         still_reading, frame = video_stream.read()
         if not still_reading:
             video_stream.release()
             break
-        cv2.imwrite(f"{args.out_dir}/bg/{idx:05d}.jpg", frame)
+        # cv2.imwrite(f"{args.out_dir}/bg/{idx:05d}.jpg", frame)
+        Image.fromarray(frame[...,::-1],"RGB").save(f"{out_dir}/bg/{idx:05d}.jpg")
         working_frames.append(frame)
         working_idx.append(idx)
         if len(working_frames) == frame_batch:
-            working(working_idx, working_frames)
+            working(working_idx, working_frames,out_dir=out_dir,face_size=face_size,nosmooth=nosmooth)
             working_idx.clear()
             working_frames.clear()
         idx += 1
     if working_idx:
-        working(working_idx, working_frames)
+        working(working_idx, working_frames,out_dir=out_dir,face_size=face_size,nosmooth=nosmooth)
 
 
     invAffMats = np.concatenate(f32_invAffMats_batchs)
     export_body_coords = np.concatenate(body_coords)
     export_head_coords = np.concatenate(head_coords)
-    np.savez(f"{args.out_dir}/face_det.npz",
-             fps=np.uint8(int(args.fps)),
+    np.savez(f"{out_dir}/face_det.npz",
+             fps=np.uint8(int(fps)),
              head_coords=export_head_coords,
              invAffMats=invAffMats,
              body_coords=export_body_coords,
              num=len(export_head_coords)
              )
-    fake_speaker=str(uuid.uuid1())
-    if not osp.exists(args.train_dir):
-        os.mkdir(args.train_dir)
-    if not osp.exists(f"{args.train_dir}/{fake_speaker}"):
-        os.mkdir(f"{args.train_dir}/{fake_speaker}")
-    vname=osp.basename(args.face).split(".")[0]
-    faceFrames_dir=f"{args.train_dir}/{fake_speaker}/{vname}"
-    shutil.copytree(f"{args.out_dir}/body_faces",faceFrames_dir,dirs_exist_ok=True)
+    fake_speaker=f"{out_dir}/../speaker"
+    if not osp.exists(fake_speaker):
+        os.mkdir(fake_speaker)
+    vname=osp.basename(face).split(".")[0]
+    faceFrames_dir=f"{fake_speaker}/{vname}"
+    shutil.copytree(f"{out_dir}/body_faces",faceFrames_dir,dirs_exist_ok=True)
     shutil.copy(wavpath,faceFrames_dir)
 
+def batch(face_dir,nosmooth,out_dir,face_size):
+    for video in os.listdir(face_dir):
+        out=osp.join(out_dir,video.split(".")[0])
+        if not osp.exists(out):
+            os.mkdir(out)
+        video=osp.join(face_dir,video)
+        main(face=video, nosmooth=nosmooth, out_dir=out, face_size=face_size)
 
 if __name__ == '__main__':
-    main()
+    #main(face=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\s2\bbaf1n.mpg",nosmooth=False,out_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\bbaf1n",face_size=288)
+    batch(face_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\s2", nosmooth=False, out_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd", face_size=288)
