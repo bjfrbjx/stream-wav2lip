@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Dataset and Dataloader setup
     # todo 自定义数据做测试集，lrw-1000 只有下半脸，做训练集
     train_dataset = Sync_Dataset(f"{args.data_root}/train.txt",(img_size,img_size//2))
-    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",(img_size,img_size))
+    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",(img_size,img_size//2))
 
     train_data_loader = DataLoader(train_dataset, batch_size=syncnet_batch_size, shuffle=True,num_workers=1)
 
@@ -52,4 +52,4 @@ if __name__ == "__main__":
         model, global_epoch, global_step = load_checkpoint(checkpoint_path, model,args.device, optimizer)
 
     syncnet_train(args.device, model, train_data_loader, test_data_loader, optimizer, checkpoint_dir,
-                  step_interval=1000, epochs=500, start_step=global_step, start_epoch=global_epoch)
+                  step_interval=1, epochs=500, start_step=global_step, start_epoch=global_epoch)
