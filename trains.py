@@ -43,10 +43,11 @@ class Sync_Dataset(Dataset):
     def get_wrong_window(self, postive_img_name):
         postive_img_id=self.get_frame_id(postive_img_name)
         tl=list(range(len(self.img_names)))
-        tl=tl[:postive_img_id]+tl[tl+syncnet_T:]
+        tl=tl[:postive_img_id]+tl[postive_img_id+syncnet_T:]
         tl=random.choices(tl,k=syncnet_T)
         if random.random() > 0.6:
             tl = [random.choice(tl)]*syncnet_T
+        tl=[self.id2frameFile(i) for i in tl]
         return tl
 
     def __init__(self, work_txt, img_size):
@@ -82,7 +83,6 @@ class Sync_Dataset(Dataset):
 
     def get_window(self, start_frame):
         start_id = self.get_frame_id(start_frame)
-        vidname = dirname(start_frame)
         window_fnames = []
         for frame_id in range(start_id, start_id + syncnet_T):
             frame=self.id2frameFile(frame_id)
