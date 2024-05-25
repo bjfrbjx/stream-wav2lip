@@ -34,8 +34,8 @@ if __name__ == "__main__":
 
     # Dataset and Dataloader setup
     # todo 自定义数据做测试集，lrw-1000 只有下半脸，做训练集
-    train_dataset = Sync_Dataset(f"{args.data_root}/train.txt",(img_size,img_size))
-    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",(img_size,img_size//2))
+    train_dataset = Sync_Dataset(f"{args.data_root}/train.txt",(img_size,img_size//2))
+    test_dataset = Sync_Dataset(f"{args.data_root}/val.txt",(img_size,img_size))
 
     train_data_loader = DataLoader(train_dataset, batch_size=syncnet_batch_size, shuffle=True,num_workers=1)
 
