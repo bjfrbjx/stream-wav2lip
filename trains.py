@@ -261,8 +261,10 @@ def syncnet_train(device, model, train_data_loader, test_data_loader, optimizer,
         for epoch in range(start_epoch + 1, start_epoch + epochs + 1):
             running_loss = 0.
             prog_bar = tqdm(train_data_loader)
+            batch_step=0
             for x, mel, y in prog_bar:
                 step += 1
+                batch_step+=1
                 model.train()
                 optimizer.zero_grad()
 
@@ -280,7 +282,7 @@ def syncnet_train(device, model, train_data_loader, test_data_loader, optimizer,
                     syncnet_eval(test_data_loader, device, model, loss_fn)
                     save_ckp(step, epoch)
 
-                prog_bar.set_description('train Loss: {}'.format(running_loss / (step + 1)))
+                prog_bar.set_description('step {} train Loss: {}'.format(step,running_loss / batch_step))
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         save_ckp(step, epoch)
