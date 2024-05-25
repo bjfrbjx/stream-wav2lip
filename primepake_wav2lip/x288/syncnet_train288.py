@@ -52,4 +52,4 @@ if __name__ == "__main__":
         model, global_epoch, global_step = load_checkpoint(checkpoint_path, model,args.device, optimizer)
 
     syncnet_train(args.device, model, train_data_loader, test_data_loader, optimizer, checkpoint_dir,
-                  step_interval=300, epochs=500, start_step=global_step, start_epoch=global_epoch)
+                  step_interval=500, epochs=5000, start_step=global_step, start_epoch=global_epoch)

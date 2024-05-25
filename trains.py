@@ -299,7 +299,7 @@ def load_checkpoint(path, model, device, optimizer):
     optimizer_state = checkpoint["optimizer"]
     if optimizer_state is not None and optimizer is not None:
         print("Load optimizer state from {}".format(path))
-        optimizer.load_state_dict(checkpoint["optimizer"])
+        #optimizer.load_state_dict(checkpoint["optimizer"])
     global_step = int(checkpoint.get("global_step", 0))
     global_epoch = int(checkpoint.get("global_epoch", 0))
 
