@@ -63,8 +63,6 @@ class Sync_Dataset(Dataset):
         return int(basename(frame).split('.')[0])
 
     def read_window(self, window_fnames, random_flip=False):
-        if window_fnames is None:
-            return None
         window = []
         for fname in window_fnames:
             img = cv2.imread(fname)
@@ -132,8 +130,6 @@ class Sync_Dataset(Dataset):
                 y = torch.zeros(1).float()
                 window_fnames=self.get_wrong_window(postive_img_name)
 
-            if window_fnames is None:
-                continue
             window = self.read_window(window_fnames, random_flip=random_flip)
 
             if len(window_fnames) != len(window):
