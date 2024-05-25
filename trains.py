@@ -120,7 +120,7 @@ class Sync_Dataset(Dataset):
             idx = random.randint(0, len(self.all_videos) - 1)
             random_flip=random.random()>0.5
             self.vidname = self.all_videos[idx]
-            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T]
+            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T-1]
             postive_img_name = random.choice(self.img_names)
 
             if random.choice([True, False]):
@@ -184,7 +184,7 @@ class Wav2lip_Dataset(Sync_Dataset):
             idx = random.randint(0, len(self.all_videos) - 1)
             random_flip=random.random()>0.5
             self.vidname = self.all_videos[idx]
-            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T]
+            self.img_names = list(i.replace("\\", "/") for i in glob(join(self.vidname, '*.jpg')))[:-syncnet_T-1]
 
             postive_img_name = random.choice(self.img_names)
 
