@@ -282,7 +282,7 @@ def syncnet_train(device, model, train_data_loader, test_data_loader, optimizer,
                     syncnet_eval(test_data_loader, device, model, loss_fn)
                     save_ckp(step, epoch)
 
-                prog_bar.set_description('step {} train Loss: {}'.format(step,running_loss / batch_step))
+                prog_bar.set_description('epoch {} step {} train Loss: {}'.format(epoch,step,round(running_loss / batch_step,4)))
     except KeyboardInterrupt:
         print("KeyboardInterrupt")
         save_ckp(step, epoch)
