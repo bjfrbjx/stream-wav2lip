@@ -132,8 +132,6 @@ class Sync_Dataset(Dataset):
 
             window = self.read_window(window_fnames, random_flip=random_flip)
 
-            if window is None:
-                print("sd")
             if len(window_fnames) != len(window):
                 continue
 
