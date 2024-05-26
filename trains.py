@@ -239,7 +239,7 @@ def syncnet_eval(test_data_loader, device, model, loss_fn):
     print(f"eval Loss:{averaged_loss}")
 
 
-def syncnet_train(device, model, train_data_loader, test_data_loader, optimizer, checkpoint_dir,
+def syncnet_train(img_size,device, model, train_data_loader, test_data_loader, optimizer, checkpoint_dir,
                   step_interval=None, epochs=None, start_step=0, start_epoch=0):
     from torch.nn import BCELoss
     _logloss = BCELoss()
@@ -248,7 +248,7 @@ def syncnet_train(device, model, train_data_loader, test_data_loader, optimizer,
     epoch = start_epoch
 
     def save_ckp(step, epoch):
-        checkpoint_path = join(checkpoint_dir, "syncnet_step{:09d}.pth".format(step))
+        checkpoint_path = join(checkpoint_dir, "syncnet{}_step{:09d}.pth".format(img_size,step))
         torch.save({
             "state_dict": model.state_dict(),
             "optimizer": optimizer.state_dict(),
