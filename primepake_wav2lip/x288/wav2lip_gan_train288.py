@@ -36,8 +36,8 @@ if __name__ == "__main__":
     checkpoint_dir = args.checkpoint_dir
 
     # Dataset and Dataloader setup
-    train_dataset = Wav2lip_Dataset(f"{args.data_root}/train.txt", img_size)
-    test_dataset = Wav2lip_Dataset(f"{args.data_root}/val.txt", img_size)
+    train_dataset = Wav2lip_Dataset(f"{args.data_root}/train.txt", (img_size,img_size))
+    test_dataset = Wav2lip_Dataset(f"{args.data_root}/val.txt", (img_size,img_size))
 
     train_data_loader = data_utils.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True,
