@@ -167,8 +167,8 @@ class SyncNet_color_288(nn.Module):
             Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1, residual=True, act="leaky"),
             Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1, residual=True, act="leaky"),
 
-            Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1, act="relu"),
-            Conv2d(1024, 1024, kernel_size=3, stride=1, padding=0, act="relu"),
+            Conv2d(1024, 1024, kernel_size=3, stride=2, padding=1, act="leaky"),
+            Conv2d(1024, 1024, kernel_size=3, stride=1, padding=0, act="leaky"),
             Conv2d(1024, 1024, kernel_size=1, stride=1, padding=0, act="relu")
         )
 
