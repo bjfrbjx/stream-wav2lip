@@ -154,9 +154,9 @@ def working(working_idx, working_frames,out_dir=".",nosmooth=False,face_size=96)
         Image.fromarray(head_face[...,::-1],"RGB").save(f"{out_dir}/head_faces/{working_idx[i]:05d}.jpg")
     head_coords.append(head_coord)
 
-template = 'ffmpeg -loglevel panic -y -i {} -strict -2 {}'
+template = 'ffmpeg -loglevel panic -y -i {} -strict -2 -ar 16000 -ac 1 {}'
 
-def main(face,nosmooth,out_dir,face_size):
+def main(face,nosmooth,out_dir,face_size,train_dir):
     """
     输入源视频face，
     指定输出目录out_dir
@@ -226,22 +226,21 @@ def main(face,nosmooth,out_dir,face_size):
              body_coords=export_body_coords,
              num=len(export_head_coords)
              )
-    fake_speaker=f"{out_dir}/../speaker"
-    if not osp.exists(fake_speaker):
-        os.mkdir(fake_speaker)
+    if not osp.exists(train_dir):
+        os.mkdir(train_dir)
     vname=osp.basename(face).split(".")[0]
-    faceFrames_dir=f"{fake_speaker}/{vname}"
+    faceFrames_dir=f"{train_dir}/{vname}"
     shutil.copytree(f"{out_dir}/body_faces",faceFrames_dir,dirs_exist_ok=True)
     shutil.copy(wavpath,faceFrames_dir)
 
-def batch(face_dir,nosmooth,out_dir,face_size):
+def batch(face_dir,nosmooth,out_dir,face_size,train_dir):
     for video in os.listdir(face_dir):
         out=osp.join(out_dir,video.split(".")[0])
         if not osp.exists(out):
             os.mkdir(out)
         video=osp.join(face_dir,video)
-        main(face=video, nosmooth=nosmooth, out_dir=out, face_size=face_size)
+        main(face=video, nosmooth=nosmooth, out_dir=out, face_size=face_size,train_dir=train_dir)
 
 if __name__ == '__main__':
     #main(face=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\s2\bbaf1n.mpg",nosmooth=False,out_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\bbaf1n",face_size=288)
-    batch(face_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\s2", nosmooth=False, out_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd", face_size=288)
+    batch(face_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd\s2", nosmooth=False, out_dir=r"\\Vp05-daily01\新建文件夹\s2.mpg_vcd", face_size=288,train_dir=r"\\Vp05-daily01\新建文件夹\speaker")
