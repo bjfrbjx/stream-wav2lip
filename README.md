@@ -36,14 +36,14 @@ obs预处理文件夹下，是【bg,body_face,heads,head_face,audio.wav,face_det
 - face_det.npz 存放将脸、头一一对应放回背景bg的定位角度信息
 
 ### 1. 导出视频
-准备好训练好的权重文件，obs预处理文件夹，人语音频，outfile指定为希望导出的mp4文件。
+准备好训练好的权重文件，obs预处理文件夹，人语音频，outfile指定为希望导出的mp4文件。  
 `python stream_out.py --checkpoint_path wav2lip288_step10000.pth --data_dir out_dir --audio_files  xxx.mp3 --outfile xx.mp4 `
 因为原版的只导出权重没有网络结构，只能先根据权重文件的层数，写死对应的网络结构，看后面能不能优化。
 
 
 ### 2. 对接obs
-准备好训练好的权重文件，obs预处理文件夹，人语音频，outfile指定为”obs“。
-打开obs，调好麦克风和画布比例。
+准备好训练好的权重文件，obs预处理文件夹，人语音频，outfile指定为”obs“。  
+打开obs，调好麦克风和画布比例。  
 `python stream_out.py --checkpoint_path wav2lip288_step10000.pth --data_dir out_dir --audio_files  xxx.mp3 --outfile obs `
 
 
