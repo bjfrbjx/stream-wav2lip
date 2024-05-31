@@ -37,7 +37,8 @@ obs预处理文件夹下，是【bg,body_face,heads,head_face,audio.wav,face_det
 
 ### 1. 导出视频
 准备好训练好的权重文件，obs预处理文件夹，人语音频，outfile指定为希望导出的mp4文件。  
-`python stream_out.py --checkpoint_path wav2lip288_step10000.pth --data_dir out_dir --audio_files  xxx.mp3 --outfile xx.mp4 `
+`python stream_out.py --checkpoint_path wav2lip288_step10000.pth --data_dir out_dir --audio_files  xxx.mp3 --enhance --outfile xx.mp4 `  
+enhance 使用gfpgan做面部强化，会很慢，最好不要再obs上使用  
 因为原版的只导出权重没有网络结构，只能先根据权重文件的层数，写死对应的网络结构，看后面能不能优化。
 
 
