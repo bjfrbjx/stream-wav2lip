@@ -4,7 +4,6 @@ import math
 import queue
 import random
 import time
-import traceback
 import wave
 from multiprocessing import Process, Queue
 from threading import Thread

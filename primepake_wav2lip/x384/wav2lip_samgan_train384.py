@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import utils
 from primepake_wav2lip.models import SyncNet_color_384 as SyncNet
-from primepake_wav2lip.models import Wav2Lip_288SAM as Wav2Lip, NLayerDiscriminator
+from primepake_wav2lip.models import Wav2Lip_192SAM as Wav2Lip, NLayerDiscriminator
 from trains import Wav2lip_Dataset, load_checkpoint
 
 parser = argparse.ArgumentParser(description='Code to train the Wav2Lip model WITH the visual quality discriminator')
@@ -26,7 +26,8 @@ parser.add_argument('--syncnet_checkpoint_path', help='Load the pre-trained Expe
                     required=False, type=str)
 parser.add_argument('--checkpoint_path', help='Resume generator from this checkpoint', default=None, type=str)
 parser.add_argument('--disc_checkpoint_path', help='Resume quality disc from this checkpoint', default=None, type=str)
-
+parser.add_argument('--step_interval', help='保存验证的间隔步数', default=1000, type=int)
+parser.add_argument('--epoch', help='训练总轮数', default=50, type=int)
 args = parser.parse_args()
 
 global_step = 0
@@ -236,4 +237,4 @@ if __name__ == "__main__":
     # Train!
     train(args.device, model, train_data_loader, test_data_loader, optimizer, disc_optimizer, checkpoint_dir,
           syncnet, disc,
-          step_interval=1000, epochs=500, start_step=global_step, start_epoch=global_epoch)
+          step_interval=args.step_interval, epochs=args.epoch, start_step=global_step, start_epoch=global_epoch)

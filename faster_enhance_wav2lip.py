@@ -1,12 +1,13 @@
 import os
 import subprocess
+from typing import Tuple
 
 import cv2
 import numpy as np
 import torch
+from torch.nn import Module
 
 import utils
-from Rudrabha_wav2lip.models import Wav2Lip
 from utils import BATCH_GFP
 
 torch.set_autocast_enabled(True)
@@ -16,14 +17,30 @@ batch_gfp = BATCH_GFP(device)
 MASK_COLORMAP = [0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0]
 MASK_COLORMAP2 = (0, 14, 16, 17, 18)
 norm_arg = [0.5, 0.5, 0.5]
+model_imgsize=96
 
-
+def checkParamNum2Model(stats)->Tuple[Module,int]:
+    from primepake_wav2lip.models.wav2lip import Wav2Lip_96,Wav2Lip_288
+    from primepake_wav2lip.models.sam import Wav2Lip_192SAM,Wav2Lip_384SAM
+    l=len(stats)
+    if l==352:
+        return Wav2Lip_96,96
+    elif l==422:
+        return Wav2Lip_288,288
+    elif l==507:
+        return Wav2Lip_192SAM,192
+    elif l==479:
+        return Wav2Lip_384SAM,384
+    else:
+        raise Exception("其他模型可以修改此处参数数量，引入自己的模型")
 def load_model(path):
     checkpoint = torch.load(path, map_location=device)
     new_s = {}
     for k, v in checkpoint["state_dict"].items():
         new_s[k.replace('module.', '')] = v
-    model = Wav2Lip()
+    global model_imgsize
+    Model_net,model_imgsize=checkParamNum2Model(new_s)
+    model = Model_net()
     model.load_state_dict(new_s)
     return model.to(device).eval()
     # model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[-1],output_device=-1)
@@ -82,6 +99,11 @@ def face4mel(
         raise Exception("音频和帧数不等")
     if len(mel_chunks.shape) == 3:
         mel_chunks = np.expand_dims(mel_chunks, axis=-1)
+    batch,bgf_h,bgf_w=u8bgr_face.shape[:3]
+    if bgf_h!=model_imgsize or bgf_w!=model_imgsize:
+        mid=np.transpose(u8bgr_face,axes=(1,2,0,3)).reshape((bgf_h,bgf_w,-1))
+        mid=cv2.resize(mid,(model_imgsize,model_imgsize))
+        u8bgr_face=np.transpose(mid.reshape((model_imgsize,model_imgsize,-1,3)),axes=(2,0,1,3))
     mask_faces = u8bgr_face.copy()
     mask_faces[:, u8bgr_face.shape[1] // 2:] = 0
     concat_faces = np.concatenate((mask_faces, u8bgr_face), axis=3, dtype=np.float16) / 255.
@@ -90,7 +112,14 @@ def face4mel(
 
     with torch.no_grad():
         pred = model(mel_batch, img_batch)
-    return np.uint8(pred.cpu().numpy().transpose(0, 2, 3, 1) * 255)
+        res=np.uint8(pred.detach().cpu().numpy() * 255)
+    if bgf_h!=model_imgsize or bgf_w!=model_imgsize:
+        mid=np.transpose(res.reshape((-1,model_imgsize,model_imgsize)),(1,2,0))
+        mid = cv2.resize(mid, (bgf_w, bgf_h))
+        res=np.transpose(mid,(2,0,1)).reshape(batch,3,bgf_w,bgf_h)
+
+    res=np.transpose(res,(0, 2, 3, 1))
+    return res
 
 
 def enhance_mel2lip(

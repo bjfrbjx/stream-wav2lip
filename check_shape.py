@@ -1,4 +1,5 @@
 import torch
+from torch.nn import Module
 
 
 def check_dataset():
@@ -14,18 +15,19 @@ def check_dataset():
 
 def check_wav2lip():
     from primepake_wav2lip.models.wav2lip import Wav2Lip_96 ,Wav2Lip_288
-    from primepake_wav2lip.models.sam import Wav2Lip_384SAM
+    from primepake_wav2lip.models.sam import Wav2Lip_384SAM,Wav2Lip_192SAM
 
-    def case(model, size):
+    def case(model:Module, size):
+        print(len([p for p in model.state_dict()]))
         x=torch.ones(size=(2, 6, 5, size,size), dtype=torch.float32)
         indiv_mels = torch.ones(size=(2, 5,1,80,16), dtype=torch.float32)
         mel = torch.ones(size=(2, 1, 80, 16), dtype=torch.float32)
         y=torch.ones(size=(2, 3, 5, size, size), dtype=torch.float32)
         g = model(indiv_mels, x)
         print(g.shape)
-
     case(Wav2Lip_96(), 96)
     case(Wav2Lip_288(), 288)
+    case(Wav2Lip_192SAM(), 192)
     case(Wav2Lip_384SAM(is_sam=False), 384)
 def check_syncnet():
     from primepake_wav2lip.models.syncnet import SyncNet_color_144,SyncNet_color_96,SyncNet_color_384, SyncNet_color_288

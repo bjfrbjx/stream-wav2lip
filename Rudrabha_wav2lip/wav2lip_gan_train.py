@@ -17,7 +17,8 @@ parser.add_argument('--checkpoint_dir', help='Save checkpoints to this directory
 parser.add_argument('--syncnet_path', help='Load the pre-trained Expert discriminator', required=True)
 parser.add_argument('--pre_path', help='Resume generator from this checkpoint', default=None, type=str)
 parser.add_argument('--disc_checkpoint_path', help='Resume quality disc from this checkpoint', default=None, type=str)
-
+parser.add_argument('--step_interval', help='保存验证的间隔步数', default=1000, type=int)
+parser.add_argument('--epoch', help='训练总轮数', default=50, type=int)
 args = parser.parse_args()
 
 global_step = 0
@@ -72,4 +73,4 @@ if __name__ == "__main__":
     # Train!
     gan_train(args.device, model, train_data_loader, test_data_loader, optimizer, disc_optimizer, checkpoint_dir,
               syncnet, disc,
-              step_interval=1000, epochs=500, start_step=global_step, start_epoch=global_epoch)
+              step_interval=args.step_interval, epochs=args.epoch, start_step=global_step, start_epoch=global_epoch)

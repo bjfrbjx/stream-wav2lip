@@ -16,6 +16,8 @@ parser.add_argument("--data_root", help="Root folder of the preprocessed LRS2 da
 parser.add_argument('--device', default="cpu")
 parser.add_argument('--checkpoint_dir', help='Save checkpoints to this directory', required=True, type=str)
 parser.add_argument('--pre_path', help='Resumed from this checkpoint', default=None, type=str)
+parser.add_argument('--step_interval', help='保存验证的间隔步数', default=1000, type=int)
+parser.add_argument('--epoch', help='训练总轮数', default=50, type=int)
 args = parser.parse_args()
 from hparams import *
 img_size = 384
@@ -51,4 +53,4 @@ if __name__ == "__main__":
         model, global_epoch, global_step = load_checkpoint(checkpoint_path, model,args.device, optimizer)
 
     syncnet_train(img_size,args.device, model, train_data_loader, test_data_loader, optimizer, checkpoint_dir,
-                  step_interval=1000, epochs=5000, start_step=global_step, start_epoch=global_epoch)
+                  step_interval=args.step_interval, epochs=args.epoch, start_step=global_step, start_epoch=global_epoch)
