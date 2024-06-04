@@ -19,7 +19,8 @@ LWR-1000数据集是大型中文唇语数据集，适合中文发音嘴型，但
 4.从头训练的话最好有各种各样的人脸，只有两三个模特的泛化能力弱。  
 
 使用 `python pre_detface4stream.py`直接批量预处理。默认使用cuda，没有显卡就降级cpu。  
-记得修改main中参数（懒得写命令行工具）  
+和原版的预处理相比，使用外部依赖的facedet，没有重写，并使用了更快的blazeface方法。gfpgan也直接使用`retinaface_mobile0.25`，更少资源消耗。  
+另外记得修改main中参数（懒得写命令行工具）  
 - face_dir: 视频文件夹
 - nosmooth: 脸部框选地平滑一些（没什么用）
 - out_dir: 导出文件夹（obs预处理数据）
