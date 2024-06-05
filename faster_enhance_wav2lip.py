@@ -86,7 +86,7 @@ def head2background(frames, u8bgr_head, invAffMats):
         mask = cv2.resize(mask_parsing[i] / 255., u8bgr_head[i].shape[:2])
         mask = cv2.warpAffine(mask, invAffMats[i], (w_up, h_up), flags=3)
         inv_soft_mask_list.append(np.expand_dims(mask, axis=-1))
-    inv_soft_masks = np.asarray(inv_soft_mask_list, dtype=np.float16)
+    inv_soft_masks = np.asarray(inv_soft_mask_list, dtype=np.float32)
     return copy_head_with_mask(inv_soft_masks, pasted_faces, frames)
 
 
@@ -106,7 +106,7 @@ def face4mel(
         u8bgr_face=np.transpose(mid.reshape((model_imgsize,model_imgsize,-1,3)),axes=(2,0,1,3))
     mask_faces = u8bgr_face.copy()
     mask_faces[:, u8bgr_face.shape[1] // 2:] = 0
-    concat_faces = np.concatenate((mask_faces, u8bgr_face), axis=3, dtype=np.float16) / 255.
+    concat_faces = np.concatenate((mask_faces, u8bgr_face), axis=3, dtype=np.float32) / 255.
     img_batch = torch.FloatTensor(np.transpose(concat_faces, (0, 3, 1, 2))).to(device)
     mel_batch = torch.FloatTensor(np.transpose(mel_chunks, (0, 3, 1, 2))).to(device)
 
@@ -197,4 +197,4 @@ def audio2mel(
             break
         mel_chunks.append(mel[:, start_idx: start_idx + mel_step_size])
         i += 1
-    return np.asarray(mel_chunks, dtype=np.float16), wav_int16
+    return np.asarray(mel_chunks, dtype=np.float32), wav_int16

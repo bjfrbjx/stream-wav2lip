@@ -44,10 +44,10 @@ class BATCH_GFP(GFPGANer):
         return res
 
     def parse_heads(self, u8bgr_heads: np.ndarray):
-        tensor = torch.from_numpy(u8bgr_heads[..., (2, 1, 0)].transpose((0, 3, 1, 2))).type(torch.float16).to(
+        tensor = torch.from_numpy(u8bgr_heads[..., (2, 1, 0)].transpose((0, 3, 1, 2))).type(torch.float32).to(
             self.device)
         face_input = tensor / 127.5 - 1
-        # f16rgb=u8bgr_heads[...,::-1].transpose((0, 3, 1, 2)).astype(np.float16)/127.5-1
+        # f16rgb=u8bgr_heads[...,::-1].transpose((0, 3, 1, 2)).astype(np.float32)/127.5-1
         # face_input = torch.from_numpy(f16rgb).to(self.device)
         while True:
             predictions = []
@@ -63,10 +63,10 @@ class BATCH_GFP(GFPGANer):
             return torch.concatenate(predictions, dim=0)
 
     def enhance_heads(self, u8bgr_heads: np.ndarray, weight=0.5):
-        tensor = torch.from_numpy(u8bgr_heads[..., (2, 1, 0)].transpose((0, 3, 1, 2))).type(torch.float16).to(
+        tensor = torch.from_numpy(u8bgr_heads[..., (2, 1, 0)].transpose((0, 3, 1, 2))).type(torch.float32).to(
             self.device)
         tensor = tensor / 127.5 - 1
-        # f16rgb=u8bgr_heads[...,::-1].transpose((0, 3, 1, 2)).astype(np.float16)/127.5-1
+        # f16rgb=u8bgr_heads[...,::-1].transpose((0, 3, 1, 2)).astype(np.float32)/127.5-1
         # tensor = torch.from_numpy(f16rgb).to(self.device)
         while True:
             predictions = []
