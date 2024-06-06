@@ -20,7 +20,8 @@ if not torch.cuda.is_available():
 PADS = [0, 15, 0, 0]
 DEVICE = device
 gfp_worker = BATCH_GFP(device)
-
+face_template = np.array([[192.98138, 239.94708], [318.90277, 240.1936], [256.63416, 314.01935],
+                          [201.26117, 371.41043], [313.08905, 371.15118]])
 detector = FaceAlignment(LandmarksType.TWO_D, flip_input=False, device=DEVICE,face_detector="blazeface")
 
 
@@ -81,8 +82,6 @@ def crop_head_with_affine(u8bgr_frames: np.ndarray):
         with torch.no_grad():
             final_bounding_boxes, final_landmarks = gfp_worker.face_helper.face_det.batched_detect_faces(torch.from_numpy(u8bgr_frames).to(DEVICE), 0.97)
         return final_bounding_boxes, final_landmarks
-    face_template = np.array([[192.98138, 239.94708], [318.90277, 240.1936], [256.63416, 314.01935],
-                              [201.26117, 371.41043], [313.08905, 371.15118]])
     all_crop_heads = []
     inverse_affine_matrices = []
     final_bounding_boxes, final_landmarks=batched_detect_faces()

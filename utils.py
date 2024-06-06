@@ -15,8 +15,8 @@ class BATCH_GFP(GFPGANer):
     parse_batch_size = 8
     enhance_batch_size = 8
 
-    def __init__(self, device=None):
-        super().__init__('gfpgan/weights/GFPGANv1.3.pth', 2, 'clean', 2, None, device)
+    def __init__(self, device='cpu',arch='clean',model_path='gfpgan/weights/GFPGANv1.3.pth'):
+        super().__init__(model_path, 2, arch, 2, None, device)
         self.face_helper = FaceRestoreHelper(
             upscale_factor=2,
             face_size=512,
@@ -181,3 +181,23 @@ def save_sample_images(x, g, gt, global_step, checkpoint_dir):
     for batch_idx, c in enumerate(collage):
         for t in range(len(c)):
             cv2.imwrite('{}/{}_{}.jpg'.format(folder, batch_idx, t), c[t])
+
+
+def batch_cv2resize(frames:np.ndarray,height:int,width:int,interpolation=cv2.INTER_LINEAR):
+    # frames (batch,h,w,c)
+    if frames.ndim==3:
+        frames=frames[...,None]
+    batch, bgf_h, bgf_w,c = frames.shape
+    mid = np.transpose(frames, axes=(1, 2, 0, 3)).reshape((bgf_h, bgf_w, -1))
+    mid = cv2.resize(mid, (width, height),interpolation=interpolation)
+    res = np.transpose(mid.reshape((height, width, -1, c)), axes=(2, 0, 1, 3))
+    if res.shape[3]==1:
+        return res[...,0]
+    return res
+
+if __name__=="__main__":
+    from PIL import Image
+    f=Image.open(r"E:\learn\stream-wav2lip\video_data\out_dir\head_faces\00000.jpg")
+    f=np.uint8(f)[None,:,:,:]
+    res=batch_cv2resize(f[(0,0,0),:,:,:],height=500,width=300)
+    Image.fromarray(res[0],"RGB").show()

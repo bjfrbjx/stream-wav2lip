@@ -101,9 +101,11 @@ def face4mel(
         mel_chunks = np.expand_dims(mel_chunks, axis=-1)
     batch,bgf_h,bgf_w=u8bgr_face.shape[:3]
     if bgf_h!=model_imgsize or bgf_w!=model_imgsize:
-        mid=np.transpose(u8bgr_face,axes=(1,2,0,3)).reshape((bgf_h,bgf_w,-1))
-        mid=cv2.resize(mid,(model_imgsize,model_imgsize))
-        u8bgr_face=np.transpose(mid.reshape((model_imgsize,model_imgsize,-1,3)),axes=(2,0,1,3))
+        # # u8bgr_face (batch,h,w,3)
+        # mid=np.transpose(u8bgr_face,axes=(1,2,0,3)).reshape((bgf_h,bgf_w,-1))
+        # mid=cv2.resize(mid,(model_imgsize,model_imgsize))
+        # u8bgr_face=np.transpose(mid.reshape((model_imgsize,model_imgsize,-1,3)),axes=(2,0,1,3))
+        u8bgr_face= utils.batch_cv2resize(u8bgr_face,height=model_imgsize,width=model_imgsize)
     mask_faces = u8bgr_face.copy()
     mask_faces[:, u8bgr_face.shape[1] // 2:] = 0
     concat_faces = np.concatenate((mask_faces, u8bgr_face), axis=3, dtype=np.float32) / 255.
@@ -113,12 +115,10 @@ def face4mel(
     with torch.no_grad():
         pred = model(mel_batch, img_batch)
         res=np.uint8(pred.detach().cpu().numpy() * 255)
+        res=np.transpose(res,(0, 2, 3, 1))
+        # res (batch,h,w,3)
     if bgf_h!=model_imgsize or bgf_w!=model_imgsize:
-        mid=np.transpose(res.reshape((-1,model_imgsize,model_imgsize)),(1,2,0))
-        mid = cv2.resize(mid, (bgf_w, bgf_h))
-        res=np.transpose(mid,(2,0,1)).reshape(batch,3,bgf_w,bgf_h)
-
-    res=np.transpose(res,(0, 2, 3, 1))
+        res=utils.batch_cv2resize(res,height=bgf_h,width=bgf_w)
     return res
 
 
