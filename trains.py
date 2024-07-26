@@ -53,7 +53,7 @@ class Sync_Dataset(Dataset):
     def __init__(self, work_txt, img_size):
         self.target_imgsize = img_size
         self.work_txt = work_txt
-        with open(self.work_txt, "r") as f:
+        with open(self.work_txt, "r",encoding="utf-8") as f:
             self.all_videos = [i.strip() for i in f.readlines()]
 
     def get(self):
@@ -65,7 +65,7 @@ class Sync_Dataset(Dataset):
     def read_window(self, window_fnames, random_flip=False):
         window = []
         for fname in window_fnames:
-            img = cv2.imread(fname)
+            img = utils.cv2imread(fname)
             if img is None:
                 return None
             try:

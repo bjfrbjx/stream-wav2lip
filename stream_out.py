@@ -16,6 +16,7 @@ import pyvirtualcam
 import torch
 
 from faster_enhance_wav2lip import audio2mel, mel2lip, enhance_mel2lip, load_model
+from utils import cv2imread
 
 parser = argparse.ArgumentParser(description='流式生成视频帧，并将数据推送到obs和话筒')
 
@@ -63,16 +64,16 @@ class DataPool:
 
     def next_data(self, enhance):
         idx = next(self.cycle)
-        bg = cv2.imread(f"{self.data_dir}/bg/{idx:05d}.jpg")
+        bg = cv2imread(f"{self.data_dir}/bg/{idx:05d}.jpg")
         if not enhance:
-            body_face = cv2.imread(f"{self.data_dir}/body_faces/{idx:05d}.jpg")
+            body_face = cv2imread(f"{self.data_dir}/body_faces/{idx:05d}.jpg")
             data = {"bg": bg,
                     "body_face": body_face,
                     "body_coord": self.body_coords[idx]
                     }
         else:
-            head = cv2.imread(f"{self.data_dir}/heads/{idx:05d}.jpg")
-            head_face = cv2.imread(f"{self.data_dir}/head_faces/{idx:05d}.jpg")
+            head = cv2imread(f"{self.data_dir}/heads/{idx:05d}.jpg")
+            head_face = cv2imread(f"{self.data_dir}/head_faces/{idx:05d}.jpg")
             data = {"bg": bg,
                     "head": head,
                     "head_face": head_face,

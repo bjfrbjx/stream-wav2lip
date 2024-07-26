@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import sys,os
 sys.path.extend([os.getcwd(), os.path.join(os.getcwd(), "..","..")])
 import argparse

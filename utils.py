@@ -195,6 +195,10 @@ def batch_cv2resize(frames:np.ndarray,height:int,width:int,interpolation=cv2.INT
         return res[...,0]
     return res
 
+def cv2imread(filename):
+    return cv2.imdecode(np.fromfile(filename, dtype=np.uint8), -1)
+
+
 if __name__=="__main__":
     from PIL import Image
     f=Image.open(r"E:\learn\stream-wav2lip\video_data\out_dir\head_faces\00000.jpg")
