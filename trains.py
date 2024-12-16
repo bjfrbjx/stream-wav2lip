@@ -40,15 +40,29 @@ class Sync_Dataset(Dataset):
         frame2 = join(self.vidname, f'{frame_id}.jpg')
         return frame1 if os.path.exists(frame1) else frame2
 
+    # def get_wrong_window(self, postive_img_name):
+    #     postive_img_id=self.get_frame_id(postive_img_name)
+    #     tl=list(range(len(self.img_names)))
+    #     tl=tl[:postive_img_id]+tl[postive_img_id+syncnet_T:]
+    #     tl=random.choices(tl,k=syncnet_T)
+    #     if random.random() > 0.6:
+    #         tl = [random.choice(tl)]*syncnet_T
+    #     tl=[self.id2frameFile(i) for i in tl]
+    #     return tl
+
     def get_wrong_window(self, postive_img_name):
-        postive_img_id=self.get_frame_id(postive_img_name)
-        tl=list(range(len(self.img_names)))
-        tl=tl[:postive_img_id]+tl[postive_img_id+syncnet_T:]
-        tl=random.choices(tl,k=syncnet_T)
+        postive_img_id = self.get_frame_id(postive_img_name)
+        tl0 = list(range(len(self.img_names)))
+        tl = tl0[:max(postive_img_id - 3, 0)] + tl0[postive_img_id + 3:]
+        start_id = random.choice(tl)
         if random.random() > 0.6:
-            tl = [random.choice(tl)]*syncnet_T
-        tl=[self.id2frameFile(i) for i in tl]
-        return tl
+            tlo = random.choices(tl, k=syncnet_T)
+            return [self.id2frameFile(i) for i in tlo]
+        window_fnames = []
+        for frame_id in range(start_id, start_id + syncnet_T):
+            frame = self.id2frameFile(frame_id)
+            window_fnames.append(frame)
+        return window_fnames
 
     def __init__(self, work_txt, img_size):
         self.target_imgsize = img_size
